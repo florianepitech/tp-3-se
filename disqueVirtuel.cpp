@@ -42,14 +42,20 @@ namespace TP3 {
             this->m_blockDisque.push_back(Block());
         }
         //Initialisation du bitmap des blocs libres dans le bloc 2 (OK)
+        this->m_blockDisque[FREE_BLOCK_BITMAP].m_bitmap.clear();
         this->m_blockDisque[FREE_BLOCK_BITMAP].m_type_donnees = S_IFBL;
+        for (int i = 0; i < N_BLOCK_ON_DISK; i++) {
+            this->m_blockDisque[FREE_BLOCK_BITMAP].m_bitmap.push_back(true);
+        }
 
         //Initialisation du bitmap des i-nodes libres dans le bloc 3 (OK)
         this->m_blockDisque[FREE_INODE_BITMAP].m_type_donnees = S_IFIL;
+
         //Marquez tous les blocs de 0 à 23 comme non-libres (OK)
         for (int i = 0; i < 24; i++) {
             // A revoir car cela ecrase la valeur de m_type_donnees de FREE_BLOCK_BITMAP et FREE_INODE_BITMAP
             this->m_blockDisque[i].m_type_donnees = S_IFIN;
+
         }
         //Créer les i-nodes dans les blocs de 4 à 23 (1 inode par bloc) (OK)
         for (int i = 4; i < 24; i++) {
@@ -61,12 +67,25 @@ namespace TP3 {
                     i
             );
         }
-        //Marquez tous les i-nodes de 1 à 19 comme libres (0 non libre) (A verifier)
+        //Marquez tous les blocks de 1 à 19 comme libres (0 non libre) (A verifier)
         for (int i = 1; i < 20; i++) {
             this->m_blockDisque[FREE_BLOCK_BITMAP].m_bitmap[i] = false;
         }
+
+        //Marquez tous les inodes de 1 à 128 comme libres
+        this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap.clear();
+        for (int i = 0; i < N_BLOCK_ON_DISK; i ++) {
+            bool status = false;
+            if (i < 4 || i > 23) {
+                status = true;
+            }
+            this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap.push_back(status);
+        }
+
+        PrintList(this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap);
         //Créer le répertoire racine / avec l’i-node 1
         addRootDirectory();
+        PrintList(this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap);
         std::cout << "Formatage du disque réussi" << std::endl;
         return 0;
     }
@@ -155,7 +174,7 @@ namespace TP3 {
 
     // Ajouté par Florian
     Block* DisqueVirtuel::getBlock(std::string p_DirLocation) {
-        std::vector<std::string> path =
+        // std::vector<std::string> path =
         // auto block_root = this->m_blockDisque[ROOT_INODE];
         // for (auto dirEntry : block_root.m_dirEntry) {
         //     if (dirEntry.m_filename == p_Filename) {
@@ -175,12 +194,40 @@ namespace TP3 {
                 0,
                 ROOT_INODE
         );
-        this->m_blockDisque[5]->dirEntry = new dirEntry(
-                1,
-                "/"
-        );
-        // Mettre a jour la liste des inode libres (bitmap)
-        this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap[1] = false;
+        this->m_blockDisque[5].m_dirEntry.push_back(new dirEntry(1, "/"));
+        // // Mettre a jour la liste des inode libres (bitmap)
+        std::cout << this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap[GetFirstFreeInode()] << std::endl;
+        this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap[GetFirstFreeInode()] = false;
+        
+
+    }
+
+    int DisqueVirtuel::GetFirstFreeInode() {
+        auto vec_ = this->m_blockDisque[FREE_INODE_BITMAP].m_bitmap;
+        for (int i = 0; i < vec_.size(); i++) {
+            if (vec_[i] == true) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    int DisqueVirtuel::GetFirstFreeBlock() {
+        auto vec_ = this->m_blockDisque[FREE_BLOCK_BITMAP].m_bitmap;
+        for (int i = 5; i < vec_.size(); i++) {
+            if (vec_[i] == true) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    void DisqueVirtuel::PrintList(std::vector<bool> vec_) {
+        std::cout << "Taille du vecteur -> " << vec_.size() << std::endl;
+        for (size_t i = 0; i < vec_.size(); ++i) {
+            std::cout << "[ ] -> " << i << " : " << vec_[i] << std::endl;
+        }
+        std::cout << "----------------------------------------------" << std::endl;
     }
 
 }//Fin du namespace

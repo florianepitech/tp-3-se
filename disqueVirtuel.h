@@ -45,6 +45,9 @@ private:
     // Vous pouvez ajouter ici des méthodes privées
     Block* getBlock(std::string p_DirLocation); // Ajouté par Florian
     void addRootDirectory(); // Ajouté par Florian
+	void PrintList(std::vector<bool> vec_);
+	int GetFirstFreeInode(void);
+	int GetFirstFreeBlock(void);
 
 };
 
